@@ -1,0 +1,93 @@
+﻿
+@{
+    ViewBag.Title = "GetMapa";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<html>
+<head>
+    <title>MiniCopiloto</title>
+</head>
+<body>
+    <div class="row">
+        <div class="col-md-6" ">
+            <h1 class="text-center" style="text-shadow: 0 0 0px #000000; font-family:'Bernard MT'; color:midnightblue"> StreetView</h1>
+            <div id="pano" style="@*position: absolute;*@ width: 500px; height: 350px; left: 100px; "></div>
+        </div>
+        <div class="col-md-offset-6">
+            <h1 class="text-center" style="text-shadow: 0 0 0px #000000; font-family:'Bernard MT'; color:midnightblue"> Mapa</h1>
+            <div id="map" style="@*position: absolute;*@ width: 500px; height: 350px; left: 100px;"></div>
+        </div>
+    </div>
+
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCSKBDdPPlfca_zTwyxKiicRQn1qfgRjLw&callback=initMap&libraries=&y=weeky" defer></script>
+    <script type="text/javascript">
+        /*
+* Click the map to set a new location for the Street View camera.
+*/
+        let map;
+        let panorama;
+
+        function initMap() {
+            const berkeley = { lat: 19.430553819754724, lng: - 99.16160779033379 };
+            const sv = new google.maps.StreetViewService();
+
+            panorama = new google.maps.StreetViewPanorama(
+                document.getElementById("pano")
+            );
+            // Set up the map.
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: berkeley,
+                zoom: 16,
+                streetViewControl: false,
+            });
+            // Set the initial Street View camera to the center of the map
+            sv.getPanorama({ location: berkeley, radius: 50 }).then(processSVData);
+            // Look for a nearby Street View panorama when the map is clicked.
+            // getPanorama will return the nearest pano when the given
+            // radius is 50 meters or less.
+
+
+            map.addListener("click", (event) => {
+                sv.getPanorama({ location: event.latLng, radius: 50 })
+                    .then(processSVData)
+                    .catch((e) =>
+                        console.error("Street View no ha sido encontrado en la localización indicada.")
+                    );
+            });
+        }
+
+        function processSVData({ data }) {
+            const location = data.location;
+            const marker = new google.maps.Marker({
+                position: location.latLng,
+                map,
+                title: location.description,
+            });
+
+            panorama.setPano(location.pano);
+            panorama.setPov({
+                heading: 270,
+                pitch: 0,
+            });
+            panorama.setVisible(true);
+            marker.addListener("click", () => {
+                const markerPanoID = location.pano;
+
+                // Set the Pano to use the passed panoID.
+                panorama.setPano(markerPanoID);
+                panorama.setPov({
+                    heading: 270,
+                    pitch: 0,
+                });
+                panorama.setVisible(true);
+            });
+        }
+
+        window.initMap = initMap;
+
+    </script>
+</body>
+</html>
